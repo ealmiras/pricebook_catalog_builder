@@ -1,4 +1,4 @@
-# Global Base Pricebook & Catalog Builder (SQL + Docker)
+# Global Base Pricebook Catalog Builder (SQL + Docker)
 
 A reproducible, policy-driven pricing engine built with PostgreSQL and Docker, that generates region-specific base pricebooks from PO-level RRPs, applying VAT logic, FX conversion, and margin guardrails.
 

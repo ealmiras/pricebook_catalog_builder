@@ -1,0 +1,6 @@
+region,vat_rate,vat_included_in_price
+EU_DE,0.19,true
+UK,0.20,true
+US,0.00,false
+UAE,0.05,false
+JP,0.10,true

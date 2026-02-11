@@ -35,7 +35,7 @@ docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/02_intermediate/int_r
 docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/02_intermediate/int_margin_checks.sql
 docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/03_marts/final_margin_output.sql
 docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/03_marts/mart_base_pricebook.sql
-docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/03_marts/scd2.sql
+docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/03_marts/mart_price_history_scd2.sql
 
 echo "==> Creating export views..."
 docker exec -i "$CONTAINER" psql -U "$USER" -d "$DB" < sql/04_exports/export_base_pricebook.sql

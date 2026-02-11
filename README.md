@@ -51,6 +51,51 @@ For each SKU × Region:
 └── README.md
 ```
 
+## Architecture Diagram
+```
+                    ┌─────────────────────────────┐
+                    │          Seed Inputs        │
+                    │                             │
+                    │ data/raw_po.csv             │
+                    │ data/fx_rates.csv           │
+                    │ data/tax_rules.csv          │
+                    │ data/pricing_guardrails.csv │
+                    └───────────────┬─────────────┘
+                                    v
+┌──────────────────────────────────────────────────────────────────────┐
+│                               01_staging                             │
+│                                                                      │
+│  stg_po_latest:    latest PO per SKU (window function)               │
+│  stg_rrp_long:     wide RRPs → long format (SKU × Region)            │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    v
+┌──────────────────────────────────────────────────────────────────────┐
+│                           02_intermediate                            │
+│                                                                      │
+│  int_rrp_with_fallback:  use local RRP else EUR × FX                 │
+│  int_margin_checks:      VAT netting + cost conversion + margin calc │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    v
+┌──────────────────────────────────────────────────────────────────────┐
+│                               03_marts                               │
+│                                                                      │
+│  final_margin_output:   apply region min margin guardrails → OK/FAIL │
+│  mart_base_pricebook:   persisted base pricebook output              │
+│  mart_price_history_scd2: SCD2 history (valid_from/to, is_current)   │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    v
+┌──────────────────────────────────────────────────────────────────────┐
+│                               04_exports                             │
+│                                                                      │
+│  export_base_pricebook_pretty: detailed QA output + failure reasons  │
+│  export_platform_pricebook_wide: wide SKU export (platform upload)   │
+│                                                                      │
+│  CSVs written to: data/exports/*_<YYYY-MM-DD>.csv                    │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+The pipeline follows an analytics-engineering pattern (staging → intermediate → marts → exports) while remaining runnable end-to-end via Docker.
+
 ## Quick Start (Reproducible Execution)
 Requirements:
 - Docker Desktop

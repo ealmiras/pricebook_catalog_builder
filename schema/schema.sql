@@ -1,3 +1,16 @@
+-- =========================================
+-- Reset schema (safe for demo re-runs)
+-- =========================================
+
+drop table if exists mart_price_history_scd2 cascade;
+drop table if exists mart_base_pricebook cascade;
+
+drop table if exists pricing_guardrails cascade;
+drop table if exists tax_rules cascade;
+drop table if exists fx_rates cascade;
+drop table if exists dim_regions cascade;
+drop table if exists raw_po cascade;
+
 -- ========================
 -- RAW INPUT
 -- ========================

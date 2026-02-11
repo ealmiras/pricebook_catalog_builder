@@ -29,7 +29,7 @@ create table dim_regions (
 create table fx_rates (
     from_ccy text,
     to_ccy text,
-    rate numeric(6,4),
+    rate numeric(10,4),
     updated_at timestamp
 );
 
@@ -53,9 +53,9 @@ create table mart_base_pricebook (
     brand text,
     region text,
     currency text,
-    base_price numeric(6,2),
-    net_price numeric(6,2),
-    margin_pct numeric(6,4),
+    base_price numeric(10,2),
+    net_price numeric(10,2),
+    margin_pct numeric(10,4),
     pricing_status text,
     run_timestamp timestamp default current_timestamp
 );
@@ -63,7 +63,7 @@ create table mart_base_pricebook (
 create table mart_price_history_scd2 (
     sku text,
     region text,
-    base_price numeric(6,2),
+    base_price numeric(10,2),
     valid_from timestamp,
     valid_to timestamp,
     is_current boolean

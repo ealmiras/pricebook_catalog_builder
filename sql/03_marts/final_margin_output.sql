@@ -1,5 +1,5 @@
 create or replace view final_margin_output as (
-    select *,
+    select i.*,
         (net_price - cost_local) / nullif(net_price,0) as margin_pct,
         case
             when (net_price - cost_local) / nullif(net_price,0)

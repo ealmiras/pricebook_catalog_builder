@@ -1,39 +1,150 @@
-# Global Base Pricebook & Catalog Builder (SQL)
+# Global Base Pricebook & Catalog Builder (SQL + Docker)
 
-**Goal:** automate base price and catalog creation to remove manual errors and enforce consistent pricing policy across regions.
-Base prices are RRP-driven; downstream discounted pricebooks are out of scope.
+An end-to-end SQL pipeline that generates region-specific base pricebooks from PO-level RRPs, applying VAT logic, FX conversion, and margin guardrails — with reproducible Docker execution and export-ready outputs.
 
-Regions covered: EU-DE, UK, US, UAE, JP
+## Objective
 
-## Pipeline
-raw_po_rrp + raw_costs  
-→ stg_po_rrp_latest  
-→ stg_rrp_long  
-→ int_rrp_with_fallback (EUR RRP fallback via FX)  
-→ int_margin_checks (VAT/duties normalization + min margin guardrail)  
-→ mart_base_pricebook  
-→ mart_price_history_scd2  
-→ export_pricebook_incremental  
+Automate base price and catalog creation to:
+- Eliminate manual spreadsheet-based pricing
+- Enforce consistent pricing policy across regions
+- Validate margin thresholds before release
+- Provide clean exports for downstream platforms (e.g. Salesforce)
 
-## Key rules
-- RRP-first: use local RRP if available, else fallback to EUR RRP × FX
-- VAT handling per region (gross vs net)
-- Duties handling configurable (included vs add-on)
-- Min margin threshold enforcement (validation output)
+Base prices are RRP-driven.  
+If a regional RRP is missing, the system falls back to the EUR RRP converted via FX.
 
-## How to load?
+## Regions Covered
+EU_DE (EUR)  
+UK (GBP)  
+US (USD)  
+UAE (AED)  
+JP (JPY)
+
+## Pricing Logic Overview
+For each SKU × Region:
+1. Select latest PO per SKU
+2. Normalize RRPs from wide → long format
+3. Apply fallback logic:
+    - Use regional RRP if present
+    - Else: EUR_RRP × FX
+4. Apply VAT normalization:
+    - If VAT included → derive net price
+5. Convert cost to region currency
+6. Calculate margin
+7. Apply guardrail:
+    - Flag as FAIL if below region-specific minimum margin
+8. Store SCD2 history
+9. Generate export views
+
+## Project Structure
 ```
-\copy raw_po FROM 'data/raw_po.csv' CSV HEADER;  
-\copy dim_regions FROM 'data/dim_regions.csv' CSV HEADER;  
-\copy fx_rates FROM 'data/fx_rates.csv' CSV HEADER;  
-\copy tax_rules FROM 'data/tax_rules.csv' CSV HEADER;  
-\copy pricing_guardrails FROM 'data/pricing_guardrails.csv' CSV HEADER;  
+├── schema/        → table definitions
+├── data/          → seed data + exports
+├── sql/
+│   ├── 01_staging/
+│   ├── 02_intermediate/
+│   ├── 03_marts/  
+│   └── 04_exports/ 
+├── scripts/       → one-command execution  
+├── docker-compose.yml  
+├── Makefile
+└── README.md
 ```
 
-## What this project demonstrates
+## Quick Start (Reproducible Execution)
+Requirements:
+- Docker Desktop
+- Make (optional but recommended)
 
-- Modular SQL modeling (staging → intermediate → marts)
-- Policy-driven logic (rules stored in tables, not hardcoded)
-- Data quality / exception modeling
-- History tracking (SCD2)
-- Export/incremental patterns (ETL)
+Run the entire system with:
+```
+make run
+```
+
+This will:
+- Start Postgres (Docker)
+- Run schema
+- Load seed data
+- Build all pipeline views
+- Populate marts
+- Generate export CSVs
+
+## Generated Outputs
+Located in:
+```
+data/exports/
+```
+
+### 1. Detailed Validation Output
+**base_pricebook_<DATE>.csv**
+
+Contains:
+- SKU
+- Region
+- Base price
+- Net price
+- Margin
+- Pricing status
+- Failure reason
+
+Used for internal review and pricing QA.
+
+### 2. Platform Upload Export
+**platform_pricebook_wide_<DATE>.csv**
+
+Wide format (one row per SKU):  
+| sku | eu_de | uk | us | jp | uae |
+
+- Only includes valid prices
+- Failed regions return NULL
+- Ready for CRM / platform ingestion
+
+## Guardrails
+
+Margin thresholds are region-specific:
+- EU_DE: 25%
+- UK: 25%
+- US: 30%
+- UAE: 25%
+- JP: 20%
+
+Failures are classified as:  
+**BELOW_MIN_MARGIN**
+
+## Data Model Highlights
+- Wide-to-long normalization (RRPs)
+- Policy-driven VAT handling
+- FX rates with high precision
+- Region-specific margin enforcement
+- SCD2 price history table
+- Dockerized reproducibility
+
+## Historical Tracking (SCD2)
+**mart_price_history_scd2 stores:**
+- SKU
+- Region
+- Base price
+- Valid from / valid to
+- Current flag
+
+Ensures pricing reproducibility and auditability.
+
+## Seed Data
+Includes:
+- Multiple SKUs
+- Missing regional RRPs (to test fallback)
+- VAT-included and VAT-excluded regions
+- Both passing and failing margin cases
+
+## Technologies
+- PostgreSQL
+- Docker
+- Makefile automation
+
+## Why This Project
+- This project demonstrates:
+- Analytics engineering practices
+- Financial modeling awareness
+- Multi-currency pricing logic
+- Guardrail validation systems
+- Reproducible data pipelines
